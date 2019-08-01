@@ -1,0 +1,11 @@
+[package]
+name = "finite"
+version = "0.0.0"
+authors = ["Brendan Molloy <brendan@bbqsrc.net>"]
+license = "Apache-2.0 OR MIT"
+repository = "https://github.com/bbqsrc/finite"
+documentation = "https://docs.rs/finite"
+homepage = "https://github.com/bbqsrc/finite"
+edition = "2018"
+
+[dependencies]
