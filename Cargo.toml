@@ -2,6 +2,7 @@
 name = "finite"
 version = "0.0.0"
 authors = ["Brendan Molloy <brendan@bbqsrc.net>"]
+description = "Floats you can count on."
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/bbqsrc/finite"
 documentation = "https://docs.rs/finite"
