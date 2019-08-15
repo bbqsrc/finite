@@ -1,54 +1,53 @@
 use std::cmp::Ordering;
 
-/// A finite `f32`. May not be infinite nor NaN.
-#[derive(Debug, Clone, Copy)]
-pub struct FiniteF32(f32);
+macro_rules! finite {
+    ($name:tt, $ty:ty) => (
+        finite!($name, $ty, stringify!($ty));
+    );
+    ($name:tt, $ty:ty, $tyname:expr) => {
+        #[doc = "A finite `"]
+        #[doc = $tyname]
+        #[doc = "`. May not be infinite nor NaN."]
+        #[derive(Debug, Clone, Copy)]
+        pub struct $name($ty);
 
-impl FiniteF32 {
-    /// Create a new finite `f32`. Will return `None` if given value is infinite or NaN.
-    pub fn new(n: f32) -> Option<FiniteF32> {
-        if n.is_finite() {
-            Some(FiniteF32(n))
-        } else {
-            None
+        impl $name {
+            #[doc = "Create a new finite `"]
+            #[doc = $tyname]
+            #[doc = "`. Will return `None` if given value is infinite or NaN."]
+            pub fn new(n: $ty) -> Option<Self> {
+                if n.is_finite() {
+                    Some(Self(n))
+                } else {
+                    None
+                }
+            }
+        }
+
+        impl PartialEq for $name {
+            fn eq(&self, other: &Self) -> bool {
+                self.0 == other.0
+            }
+        }
+
+        impl Eq for $name {}
+
+        impl PartialOrd for $name {
+            fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+                Some(self.cmp(other))
+            }
+        }
+
+        impl Ord for $name {
+            fn cmp(&self, other: &Self) -> Ordering {
+                self.0.partial_cmp(&other.0).expect("must be finite")
+            }
         }
     }
 }
 
-impl PartialEq for FiniteF32 {
-    fn eq(&self, other: &Self) -> bool {
-        self.0 == other.0
-    }
-}
-
-impl Eq for FiniteF32 {}
-
-impl PartialOrd for FiniteF32 {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for FiniteF32 {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.0.partial_cmp(&other.0).expect("must be finite")
-    }
-}
-
-/// A finite `f64`. May not be infinite nor NaN.
-#[derive(Debug, Clone, Copy)]
-pub struct FiniteF64(f64);
-
-impl FiniteF64 {
-    /// Create a new finite `f64`. Will return `None` if given value is infinite or NaN.
-    pub fn new(n: f64) -> Option<FiniteF64> {
-        if n.is_finite() {
-            Some(FiniteF64(n))
-        } else {
-            None
-        }
-    }
-}
+finite!(FiniteF32, f32);
+finite!(FiniteF64, f64);
 
 #[cfg(test)]
 mod tests {
