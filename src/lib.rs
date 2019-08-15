@@ -1,3 +1,5 @@
+use std::hash::{Hash, Hasher};
+
 macro_rules! finite {
     (@op => $opname:ty, $opnamety:ty, $func:tt, $name:tt, $ty:ty) => {
         impl $opname for $name {
@@ -120,6 +122,18 @@ pub struct TryFromFloatError(std::num::FpCategory);
 finite!(FiniteF32, f32);
 finite!(FiniteF64, f64);
 
+impl Hash for FiniteF32 {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        state.write_u32(unsafe { std::mem::transmute::<f32, u32>(self.0) });
+    }
+}
+
+impl Hash for FiniteF64 {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        state.write_u64(unsafe { std::mem::transmute::<f64, u64>(self.0) });
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -179,5 +193,13 @@ mod tests {
         assert!(finite.checked_add(f64::INFINITY).is_none());
         assert_eq!(finite - f64::INFINITY, f64::NEG_INFINITY);
         assert!(finite.checked_sub(f64::INFINITY).is_none());
+    }
+
+    #[test]
+    fn hash() {
+        let mut map = std::collections::HashMap::new();
+        let f = FiniteF32::new(32f32).unwrap();
+        map.insert(f, "oh yes");
+        assert_eq!(map[&f], "oh yes");
     }
 }
