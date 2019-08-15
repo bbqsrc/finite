@@ -1,6 +1,6 @@
 [package]
 name = "finite"
-version = "0.0.0"
+version = "0.0.1"
 authors = ["Brendan Molloy <brendan@bbqsrc.net>"]
 description = "Floats you can count on."
 license = "Apache-2.0 OR MIT"
