@@ -1,8 +1,31 @@
 macro_rules! finite {
+    (@op => $opname:ty, $opnamety:ty, $func:tt, $name:tt, $ty:ty) => {
+        impl $opname for $name {
+            type Output = Option<$ty>;
+
+            fn $func(self, other: Self) -> Option<$ty> {
+                let result = (self.0).$func(other.0);
+
+                if result.is_finite() {
+                    Some(result)
+                } else {
+                    None
+                }
+            }
+        }
+
+        impl $opnamety for $name {
+            type Output = $ty;
+
+            fn $func(self, other: $ty) -> $ty {
+                (self.0).$func(other)
+            }
+        }
+    };
     ($name:tt, $ty:ty) => (
-        finite!($name, $ty, stringify!($ty));
+        finite!(@finish => $name, $ty, stringify!($ty));
     );
-    ($name:tt, $ty:ty, $tyname:expr) => {
+    (@finish => $name:tt, $ty:ty, $tyname:expr) => {
         #[doc = "A finite `"]
         #[doc = $tyname]
         #[doc = "`. May not be infinite nor NaN."]
@@ -19,6 +42,26 @@ macro_rules! finite {
                 } else {
                     None
                 }
+            }
+
+            #[inline(always)]
+            pub fn checked_add(self, other: $ty) -> Option<Self> {
+                Self::new(std::ops::Add::add(self, other))
+            }
+
+            #[inline(always)]
+            pub fn checked_sub(self, other: $ty) -> Option<Self> {
+                Self::new(std::ops::Sub::sub(self, other))
+            }
+
+            #[inline(always)]
+            pub fn checked_mul(self, other: $ty) -> Option<Self> {
+                Self::new(std::ops::Mul::mul(self, other))
+            }
+
+            #[inline(always)]
+            pub fn checked_div(self, other: $ty) -> Option<Self> {
+                Self::new(std::ops::Div::div(self, other))
             }
         }
 
@@ -53,8 +96,26 @@ macro_rules! finite {
                 self.0.partial_cmp(&other.0).expect("must be finite")
             }
         }
+
+        finite!(@op => std::ops::Add, std::ops::Add<$ty>, add, $name, $ty);
+        finite!(@op => std::ops::Sub, std::ops::Sub<$ty>, sub, $name, $ty);
+        finite!(@op => std::ops::Div, std::ops::Div<$ty>, div, $name, $ty);
+        finite!(@op => std::ops::Mul, std::ops::Mul<$ty>, mul, $name, $ty);
+
+        impl std::convert::TryFrom<$ty> for $name {
+            type Error = $crate::TryFromFloatError;
+
+            fn try_from(value: $ty) -> Result<Self, Self::Error> {
+                match Self::new(value) {
+                    Some(v) => Ok(v),
+                    None => Err($crate::TryFromFloatError(value.classify()))
+                }
+            }
+        }
     }
 }
+
+pub struct TryFromFloatError(std::num::FpCategory);
 
 finite!(FiniteF32, f32);
 finite!(FiniteF64, f64);
@@ -98,5 +159,25 @@ mod tests {
         assert_eq!(finite > f64::NAN, false);
         assert_eq!(finite > f64::NEG_INFINITY, true);
         assert_eq!(finite < f64::INFINITY, true);
+    }
+
+    #[test]
+    fn add32() {
+        let finite = FiniteF32::new(1f32).unwrap();
+        assert_eq!(finite + 32f32, 33f32);
+        assert_eq!(finite - 32f32, -31f32);
+        assert_eq!(finite + f32::INFINITY, f32::INFINITY);
+        assert_eq!(finite - f32::INFINITY, f32::NEG_INFINITY);
+    }
+
+    #[test]
+    fn add64() {
+        let finite = FiniteF64::new(1f64).unwrap();
+        assert_eq!(finite + 32f64, 33f64);
+        assert_eq!(finite - 32f64, -31f64);
+        assert_eq!(finite + f64::INFINITY, f64::INFINITY);
+        assert!(finite.checked_add(f64::INFINITY).is_none());
+        assert_eq!(finite - f64::INFINITY, f64::NEG_INFINITY);
+        assert!(finite.checked_sub(f64::INFINITY).is_none());
     }
 }
