@@ -46,6 +46,10 @@ macro_rules! finite {
                 }
             }
 
+            pub fn inner(self) -> $ty {
+                self.0
+            }
+
             #[inline(always)]
             pub fn checked_add(self, other: $ty) -> Option<Self> {
                 Self::new(std::ops::Add::add(self, other))
