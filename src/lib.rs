@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 /// A finite `f32`. May not be infinite nor NaN.
 #[derive(Debug, Clone, Copy)]
 pub struct FiniteF32(f32);
@@ -10,6 +12,26 @@ impl FiniteF32 {
         } else {
             None
         }
+    }
+}
+
+impl PartialEq for FiniteF32 {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
+}
+
+impl Eq for FiniteF32 {}
+
+impl PartialOrd for FiniteF32 {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for FiniteF32 {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.0.partial_cmp(&other.0).expect("must be finite")
     }
 }
 
